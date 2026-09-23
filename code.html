@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS Exam Simulator (Ch 1 - Ch 9)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    select,
+    button {
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      font-size: 0.95rem;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      justify-content: space-around;
+    }
+
+    .stats span {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      background: #3b82f633;
+      color: #60a5fa;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .q-text {
+      font-weight: 600;
+      margin: 12px 0;
+      font-size: 1rem;
+    }
+
+    .btn-opt {
+      width: 100%;
+      text-align: left;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: block;
+    }
+
+    .btn-opt:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .correct {
+      background: rgba(34, 197, 94, 0.2) !important;
+      border-color: var(--success) !important;
+      color: #4ade80 !important;
+    }
+
+    .wrong {
+      background: rgba(239, 68, 68, 0.2) !important;
+      border-color: var(--danger) !important;
+      color: #f87171 !important;
+    }
+
+    .exp {
+      background: #0f172a;
+      border-left: 4px solid var(--primary);
+      padding: 10px 14px;
+      margin-top: 10px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Operating Systems Practice Test</h1>
+      <p>ระบบฝึกทำโจทย์แยกรายบท พร้อมตรวจคำตอบและคำอธิบาย</p>
+    </header>
+
+    <div class="panel">
+      <div>
+        <label>เลือกบทเรียน: </label>
+        <select id="chFilter">
+          <option value="all">ทั้งหมด (All Chapters)</option>
+          <option value="Ch 1">Chapter 1</option>
+          <option value="Ch 2">Chapter 2</option>
+          <option value="Ch 3">Chapter 3</option>
+          <option value="Ch 4">Chapter 4</option>
+          <option value="Ch 5">Chapter 5</option>
+          <option value="Ch 6">Chapter 6</option>
+          <option value="Ch 7">Chapter 7</option>
+          <option value="Ch 8">Chapter 8</option>
+          <option value="Ch 9">Chapter 9</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="resetBtn">รีเซ็ต</button>
+        <button id="revealBtn" style="background:var(--primary); color:#000; font-weight:bold;">เฉลยทั้งหมด</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div>จำนวนข้อ: <span id="countTotal">0</span></div>
+      <div>ตอบแล้ว: <span id="countAns" style="color:#60a5fa">0</span></div>
+      <div>ถูกต้อง: <span id="countCorrect" style="color:var(--success)">0</span></div>
+      <div>ผิด: <span id="countWrong" style="color:var(--danger)">0</span></div>
+    </div>
+
+    <div id="quizBox"></div>
+  </div>
+
+  <script>
+    // ข้อมูลชุดข้อสอบ 60 ข้อ พร้อมจัดการ Escape Strings ทั้งหมด
+    const quizData = [
+      { ch: "Ch 1", id: 1, q: "From a computer system perspective, what are the two primary roles of an operating system?", opts: { A: "Compiling programs and optimizing databases", B: "Managing resources and providing services", C: "Executing bytecodes and building networks", D: "Providing web interfaces and routing packets" }, ans: "B", exp: "An operating system acts as an intermediary between user programs and computer hardware by managing resources and providing services." },
+      { ch: "Ch 1", id: 2, q: "Which type of system executes a dedicated single program directly on the physical hardware without any intermediate operating system abstraction layer?", opts: { A: "Batch processing system", B: "Time-sharing system", C: "No operating system (bare-metal)", D: "Multiprogramming workstation" }, ans: "C", exp: "Systems without an operating system load a program directly into memory, initialize the PC to the start address, and execute." },
+      { ch: "Ch 1", id: 3, q: "In early batch processing systems, what is submitted to the system job queue for sequential execution?", opts: { A: "An interactive graphical user desktop", B: "A job consisting of input data, a job control file with commands, and output destinations", C: "A dynamically scheduled thread pool", D: "An asynchronous Remote Procedure Call message" }, ans: "B", exp: "Early batch processing bundles input storage, job control commands, and designated output devices into a single batch job." },
+      { ch: "Ch 1", id: 4, q: "What is a defining characteristic of MS-DOS?", opts: { A: "Preemptive multi-tasking with native virtual memory", B: "Multi-user and multi-tasking network server", C: "Single-user, single-tasking, text-mode only without GUI", D: "Distributed microkernel architecture" }, ans: "C", exp: "MS-DOS was designed as a single-user, single-tasking disk operating system featuring a command-line interface without memory protection." },
+      { ch: "Ch 1", id: 5, q: "What was a significant architectural limitation of cooperative multitasking in Windows 3.1?", opts: { A: "Hardware timer interrupts occurred too frequently", B: "Virtual memory paging thrashing could not be stopped", C: "A poorly behaved application could monopolize the CPU by not yielding control", D: "Multithreading across multiple CPU cores was mandatory" }, ans: "C", exp: "Cooperative multitasking relies on applications periodically checking message queues and voluntarily releasing the CPU; if an application fails to yield, other tasks are blocked." },
+      { ch: "Ch 1", id: 6, q: "Which Microsoft operating system introduced native 32-bit preemptive multitasking to mainstream personal computers?", opts: { A: "Windows 3.11", B: "Windows 95", C: "MS-DOS 6.22", D: "Windows 2.0" }, ans: "B", exp: "Windows 95 introduced native 32-bit preemptive scheduling, enabling the operating system to forcibly reclaim the CPU from running applications." },
+      { ch: "Ch 1", id: 7, q: "Which hardware component is essential for an operating system to implement preemptive time-sharing?", opts: { A: "Direct Memory Access controller", B: "Translation Lookaside Buffer", C: "Hardware timer interrupt", D: "Graphics processing accelerator" }, ans: "C", exp: "A hardware timer interrupt periodically interrupts user execution and transfers control to the operating system scheduler." },
+      { ch: "Ch 1", id: 8, q: "What is the formal definition of a process?", opts: { A: "A compiled source file stored persistently on disk", B: "An executing program loaded into main memory", C: "A set of processor hardware registers", D: "An interrupt vector table entry" }, ans: "B", exp: "A process is a program in execution that has been loaded into memory with allocated resources." },
+      { ch: "Ch 1", id: 9, q: "What is a thread?", opts: { A: "A standalone memory address space", B: "An isolated hardware interrupt handler", C: "A lightweight process representing an execution path within a process", D: "A physical core on the processor die" }, ans: "C", exp: "A thread is a basic unit of CPU execution within a process that shares code and data with other threads of that process." },
+      { ch: "Ch 1", id: 10, q: "Which statement correctly describes memory protection among threads within the same process?", opts: { A: "There is no memory protection among threads under the same process", B: "Each thread is separated by hardware boundary registers", C: "Threads communicate strictly through kernel message queues", D: "The kernel traps any thread accessing shared variables" }, ans: "A", exp: "Threads within the same process share the same virtual address space, data section, and heap without memory isolation." },
+      { ch: "Ch 1", id: 11, q: "Can a single program executable produce multiple distinct processes?", opts: { A: "No, each executable file can instantiate only one active process", B: "Yes, executing multiple copies of a program produces multiple distinct processes", C: "Only if the system runs a microkernel architecture", D: "Only when running bare-metal hardware" }, ans: "B", exp: "Running several instances of an executable instantiates separate processes with unique PIDs." },
+      { ch: "Ch 1", id: 12, q: "In enterprise IBM mainframe terminology, what does the designation \"Z\" represent in IBM Z?", opts: { A: "Zero memory overhead", B: "Zero planned and unplanned downtime", C: "Zetta-scale transaction rate", D: "Zero software licensing cost" }, ans: "B", exp: "The \"Z\" in IBM Z stands for zero-downtime, reflecting the mainframe's continuous enterprise availability." },
+      { ch: "Ch 1", id: 13, q: "What is the primary advantage of multiprogramming over single-tasking execution?", opts: { A: "Completely eliminating operating system context switches", B: "Reducing memory manufacturing costs", C: "Increasing CPU utilization by overlapping I/O wait times", D: "Avoiding software bugs in compiled languages" }, ans: "C", exp: "Multiprogramming keeps the CPU productive by switching execution to another ready task whenever the current task is stalled waiting for slow I/O." },
+      { ch: "Ch 1", id: 14, q: "What was the primary drawback of non-preemptive cooperative multitasking?", opts: { A: "Excessive hardware context switching overhead", B: "A long computation can block all other ready processes indefinitely", C: "High hardware interrupt latency", D: "Inability to run compiled C programs" }, ans: "B", exp: "In cooperative multitasking, an infinite loop or heavy computation monopolizes the processor because the OS cannot forcibly preempt control." },
+      { ch: "Ch 1", id: 15, q: "Who developed the prototype of the first computer mouse in 1964?", opts: { A: "Dennis Ritchie", B: "Douglas Engelbart", C: "Linus Torvalds", D: "Richard Stallman" }, ans: "B", exp: "Douglas Engelbart invented the computer mouse in 1964, demonstrating it in 'The Mother of All Demos.'" },
+      { ch: "Ch 1", id: 16, q: "What does the recursive acronym \"GNU\" stand for?", opts: { A: "General Network Utility", B: "GNU's Not Unix", C: "Global Native User-mode", D: "Graphical Network Unix" }, ans: "B", exp: "Richard Stallman launched the GNU Project in 1983 using the recursive acronym 'GNU\\'s Not Unix.'" },
+      { ch: "Ch 1", id: 17, q: "According to Linux distribution market share data presented in the lecture, which distribution is the most widely adopted?", opts: { A: "Red Hat Enterprise Linux", B: "Arch Linux", C: "Ubuntu", D: "Gentoo" }, ans: "C", exp: "Ubuntu holds the largest market share among public Linux distributions shown in the course statistics." },
+      { ch: "Ch 1", id: 18, q: "According to desktop operating system market share data, which platform retains the worldwide majority?", opts: { A: "Microsoft Windows", B: "Apple macOS", C: "Google Chrome OS", D: "GNU/Linux Desktop" }, ans: "A", exp: "Microsoft Windows maintains the dominant desktop market share globally at over 70%." },
+      { ch: "Ch 1", id: 19, q: "Which operating system family accounts for the majority share in worldwide server deployments?", opts: { A: "Apple macOS Server", B: "Microsoft Windows Server", C: "FreeRTOS", D: "Oracle Solaris" }, ans: "B", exp: "Worldwide server market share statistics highlighted in lecture slides cite Windows Server as holding over 70% of reported server systems." },
+      { ch: "Ch 1", id: 20, q: "What physical storage capacities were commonly associated with legacy floppy disks?", opts: { A: "100 MB, 250 MB, 750 MB", B: "8-inch, 5.25-inch, and 3.5-inch (1.44 MB)", C: "650 MB, 700 MB, 4.7 GB", D: "16 GB, 32 GB, 64 GB" }, ans: "B", exp: "Historical diskettes were manufactured in 8-inch, 5.25-inch, and 3.5-inch (holding up to 1.44 MB) physical media sizes." },
+      { ch: "Ch 2", id: 21, q: "What software mechanism allows a user-mode program to transition into kernel mode to request privileged OS services?", opts: { A: "Direct memory write to physical RAM", B: "Trap routine (System Call)", C: "Compiler loop optimization", D: "Dynamic link redirection" }, ans: "B", exp: "User applications request operating system services using system calls, which execute software traps to transfer execution to kernel mode." },
+      { ch: "Ch 2", id: 22, q: "Which CPU protection ring carries the highest privilege level for executing operating system kernel code?", opts: { A: "Ring 3", B: "Ring 0", C: "Ring 1", D: "Ring 2" }, ans: "B", exp: "In standard x86 protection ring hierarchies, Ring 0 represents the most privileged supervisor/kernel mode." },
+      { ch: "Ch 2", id: 23, q: "In which CPU protection ring do standard user-space applications execute?", opts: { A: "Ring 0", B: "Ring 1", C: "Ring 3", D: "Ring -1" }, ans: "C", exp: "User applications run in Ring 3, the least privileged mode, preventing direct manipulation of privileged hardware." },
+      { ch: "Ch 2", id: 24, q: "What is the primary architectural relationship between standard APIs (such as Win32 or POSIX) and kernel system calls?", opts: { A: "APIs replace the operating system kernel", B: "APIs run exclusively in supervisor mode", C: "APIs provide an abstraction layer that wraps and invokes underlying system calls", D: "System calls compile APIs into bytecode" }, ans: "C", exp: "APIs provide consistent, portable programmatic interfaces that internally invoke platform-specific system calls." },
+      { ch: "Ch 2", id: 25, q: "When a system call requires only a few parameters, how are they most efficiently passed to the kernel?", opts: { A: "Writing them to a temporary disk block", B: "Pushing them through an external network socket", C: "Storing the values directly in CPU registers", D: "Allocating a remote database table" }, ans: "C", exp: "Passing arguments directly in CPU registers is the fastest method when parameters do not exceed available registers." },
+      { ch: "Ch 2", id: 26, q: "When a system call requires more input parameters than available hardware CPU registers, how are the arguments passed?", opts: { A: "Excess parameters are discarded by the compiler", B: "Parameters are written to a memory table and a pointer to the table is passed in a register", C: "Parameters are transferred across an SSH pipe", D: "The system call is invoked recursively for each argument" }, ans: "B", exp: "When registers are insufficient, arguments are placed in a memory block/table, and the base address is supplied in a register." },
+      { ch: "Ch 2", id: 27, q: "Which category of system calls includes routines such as fork(), exec(), exit(), and wait()?", opts: { A: "File management", B: "Process control", C: "Device management", D: "Information maintenance" }, ans: "B", exp: "Operations governing process creation, execution, termination, and state synchronization are classified under process control." },
+      { ch: "Ch 2", id: 28, q: "What is the primary operational characteristic of static linking using static libraries (e.g., libc.a)?", opts: { A: "All running programs share a single memory copy of the library", B: "Library code is copied directly into each binary executable, creating multiple copies across processes", C: "Library code is resolved dynamically at runtime over the network", D: "Static linking eliminates the need for binary loaders" }, ans: "B", exp: "Static linking binds library routines directly into the executable binary image, duplicating library code across distinct programs." },
+      { ch: "Ch 2", id: 29, q: "What file extension identifies dynamically linked shared object libraries on Unix/Linux systems?", opts: { A: ".exe", B: ".dll", C: ".so", D: ".a" }, ans: "C", exp: "Shared libraries in Unix/Linux use the .so (Shared Object) extension, equivalent to .dll files in Windows." },
+      { ch: "Ch 2", id: 30, q: "Which operating system structure places all core functionality (scheduling, file systems, memory, networking) in a single kernel address space?", opts: { A: "Microkernel structure", B: "Monolithic structure", C: "Layered abstraction structure", D: "Client-server hybrid" }, ans: "B", exp: "Monolithic kernels house all primary subsystems within one shared supervisor address space." },
+      { ch: "Ch 2", id: 31, q: "Which experimental operating system kernel developed at Carnegie Mellon University championed the microkernel architecture?", opts: { A: "Linux", B: "Mach", C: "MS-DOS", D: "Windows 95" }, ans: "B", exp: "The Mach microkernel pioneered shifting non-essential subsystems out of kernel mode into user-space servers." },
+      { ch: "Ch 2", id: 32, q: "What is the primary performance drawback of a pure microkernel architecture?", opts: { A: "Inability to load device drivers", B: "Lack of multithreading support", C: "Performance degradation caused by message-passing IPC and frequent context switches", D: "Compulsory hardware rebooting upon application crashes" }, ans: "C", exp: "Communicating between user-space servers requires message passing through the microkernel, causing mode switches and latency." },
+      { ch: "Ch 2", id: 33, q: "In operating system design, what is the fundamental distinction between mechanism and policy?", opts: { A: "Mechanisms decide what to do; policies dictate how to do it", B: "Mechanisms dictate how to do something; policies decide what will be done", C: "Mechanisms are implemented in software; policies belong exclusively to hardware", D: "Mechanisms belong to user mode; policies run only in kernel mode" }, ans: "B", exp: "Mechanisms define tools and methods, whereas policies establish operational rules and resource allocations." },
+      { ch: "Ch 2", id: 34, q: "What is the initial firmware program executed by the CPU upon power-up called?", opts: { A: "Command interpreter", B: "Memory manager", C: "Bootstrap program", D: "File system consistency checker" }, ans: "C", exp: "The bootstrap program resides in firmware and initializes registers, memory, and devices before loading the OS kernel." },
+      { ch: "Ch 2", id: 35, q: "Where is the legacy BIOS bootloader historically located on a secondary storage disk?", opts: { A: "In the system swap partition", B: "Inside the /etc configuration tree", C: "In the Master Boot Record (MBR) located at sector 0", D: "Within an encrypted database table" }, ans: "C", exp: "Legacy BIOS firmware reads the bootloader stored in the 512-byte Master Boot Record on cylinder 0, head 0, sector 0." },
+      { ch: "Ch 2", id: 36, q: "Where does the modern Unified Extensible Firmware Interface (UEFI) store bootloader executables?", opts: { A: "In the motherboard CMOS battery", B: "Inside the CPU L1 cache", C: "In .efi files on a dedicated FAT-formatted EFI System Partition (ESP)", D: "On a remote TFTP server exclusively" }, ans: "C", exp: "UEFI reads standard .efi executable binaries from an EFI System Partition formatted with a FAT file system." },
+      { ch: "Ch 2", id: 37, q: "What disk capacity limitation rendered the legacy BIOS MBR partitioning scheme obsolete?", opts: { A: "640 KB", B: "2.1 TB", C: "128 GB", D: "16 TB" }, ans: "B", exp: "The legacy 32-bit sector addressing of MBR cannot reference partition capacities beyond 2.1 to 2.2 terabytes." },
+      { ch: "Ch 2", id: 38, q: "What hybrid kernel design serves as the foundation of Apple's Darwin operating system?", opts: { A: "Windows NT Executive combined with DOS", B: "Monolithic Linux kernel with GNU glibc", C: "Mach microkernel combined with BSD Unix components", D: "Bare-metal Hyper-V hypervisor" }, ans: "C", exp: "Apple's XNU (Darwin) blends Mach microkernel architecture with FreeBSD subsystems and POSIX layers." },
+      { ch: "Ch 2", id: 39, q: "What is the runtime environment virtual machine responsible for executing apps on Android?", opts: { A: "Java Virtual Machine (HotSpot)", B: "Android RunTime (ART)", C: "Microsoft Common Language Runtime", D: "Dalvik Ahead-Of-Time Engine" }, ans: "B", exp: "Android RunTime (ART) compiles and executes Android application DEX bytecodes using AOT and JIT techniques." },
+      { ch: "Ch 2", id: 40, q: "Which embedded relational database engine is built into Android as a standard native library?", opts: { A: "PostgreSQL", B: "SQLite", C: "Oracle Database", D: "Microsoft SQL Server" }, ans: "B", exp: "Android includes SQLite as a lightweight embedded relational database library for application-level persistent storage." },
+      { ch: "Ch 3", id: 41, q: "Which process memory segment stores local variables, function parameters, and return addresses?", opts: { A: "Heap", B: "Stack", C: "Data segment", D: "Text (code) segment" }, ans: "B", exp: "The runtime stack dynamically grows and shrinks to manage activation records for active function scopes and local variables." },
+      { ch: "Ch 3", id: 42, q: "Where is dynamically allocated memory (such as that requested via malloc() or new) stored in a process?", opts: { A: "Text segment", B: "Data segment", C: "Heap", D: "Kernel stack" }, ans: "C", exp: "The heap manages dynamic memory requests allocated during runtime execution." },
+      { ch: "Ch 3", id: 43, q: "Where are global and static variables with fixed memory allocations stored in a process?", opts: { A: "Heap", B: "Data segment", C: "Stack", D: "Program counter" }, ans: "B", exp: "Initialized and uninitialized global and static variables reside in the process data and BSS segments." },
+      { ch: "Ch 3", id: 44, q: "When the CPU scheduler selects a process from the ready queue, which state transition occurs?", opts: { A: "Running -> Waiting", B: "Ready -> Running", C: "New -> Terminated", D: "Waiting -> Ready" }, ans: "B", exp: "A ready process assigned CPU execution time transitions from the Ready state to the Running state." },
+      { ch: "Ch 3", id: 45, q: "When a running process issues an I/O request, to which state does it transition?", opts: { A: "Ready state", B: "Terminated state", C: "Waiting (Blocked) state", D: "New state" }, ans: "C", exp: "A running process unable to continue instruction execution pending an I/O event moves to the Waiting state." },
+      { ch: "Ch 3", id: 46, q: "When an I/O operation completes, to which state does the waiting process transition?", opts: { A: "Running state", B: "Ready state", C: "Terminated state", D: "Suspended state" }, ans: "B", exp: "Once its I/O finishes, the process returns to the Ready queue to await assignment by the CPU scheduler." },
+      { ch: "Ch 3", id: 47, q: "What kernel data structure stores process identification, program counters, CPU registers, and memory bounds?", opts: { A: "Translation Lookaside Buffer", B: "Process Control Block (PCB)", C: "Interrupt Vector Table", D: "Superblock" }, ans: "B", exp: "The Process Control Block (task_struct in Linux) stores execution context data for a process." },
+      { ch: "Ch 3", id: 48, q: "Which operating system scheduler regulates the overall degree of multiprogramming by selecting jobs from disk into memory?", opts: { A: "Short-term scheduler (CPU scheduler)", B: "Medium-term scheduler (Swapper)", C: "Long-term scheduler (Job scheduler)", D: "Dispatcher" }, ans: "C", exp: "The long-term scheduler selects jobs from storage buffers to admit into active main memory queues." },
+      { ch: "Ch 3", id: 49, q: "Which scheduler executes most frequently to assign the processor core among ready processes?", opts: { A: "Long-term scheduler", B: "Short-term scheduler (CPU scheduler)", C: "Batch loader", D: "Virtual machine monitor" }, ans: "B", exp: "The short-term scheduler runs frequently (e.g., every 10 to 100 ms) to allocate the CPU to ready processes." },
+      { ch: "Ch 3", id: 50, q: "Which scheduling component temporarily removes inactive processes from RAM to secondary swap storage when memory is overcommitted?", opts: { A: "Long-term scheduler", B: "Medium-term scheduler (Swapping)", C: "Short-term scheduler", D: "Interrupt dispatcher" }, ans: "B", exp: "The medium-term scheduler swaps processes between physical RAM and disk paging space to stabilize memory loads." },
+      { ch: "Ch 3", id: 51, q: "What term describes saving the hardware context of an active process into its PCB and restoring another scheduled process?", opts: { A: "Demand paging", B: "Context switch", C: "Instruction reordering", D: "Atomic swap" }, ans: "B", exp: "A context switch saves register states and program counters into the departing PCB and loads the new process context." },
+      { ch: "Ch 3", id: 52, q: "What numeric value does the Unix fork() system call return to the newly spawned child process upon success?", opts: { A: "0", B: "The parent PID", C: "A negative error code", D: "The child's own PID" }, ans: "A", exp: "fork() returns 0 to the child process and the child's positive PID to the calling parent process." },
+      { ch: "Ch 3", id: 53, q: "What value does the fork() system call return to the parent process upon successful creation of a child?", opts: { A: "0", B: "-1", C: "The PID of the newly created child process", D: "An invalid memory address pointer" }, ans: "C", exp: "The parent receives the positive process ID of the newly created child." },
+      { ch: "Ch 3", id: 54, q: "What is the effect of invoking an exec() family system call?", opts: { A: "Spawning a third sibling process", B: "Replacing the process memory space, code, and data with a new executable program", C: "Resetting hardware timer interrupts", D: "Creating an asynchronous kernel thread" }, ans: "B", exp: "The exec() system call overlays the calling process address space with a completely new binary executable image." },
+      { ch: "Ch 3", id: 55, q: "What occurs when a Unix parent process invokes wait(NULL)?", opts: { A: "The parent terminates immediately", B: "It blocks execution until at least one of its child processes terminates", C: "It loops indefinitely burning CPU cycles", D: "It forcibly aborts all background processes" }, ans: "B", exp: "wait() blocks the caller until a child terminates, retrieving exit status and releasing PCB resources." },
+      { ch: "Ch 3", id: 56, q: "Which Windows API functions provide the equivalent behavior of the Unix fork(), exec(), and wait() sequence?", opts: { A: "pthread_create() and pthread_join()", B: "System.Threading.Thread() and Sleep()", C: "CreateProcess() and WaitForSingleObject()", D: "shmget() and shmat()" }, ans: "C", exp: "Windows combines process instantiation in CreateProcess() and synchronization using WaitForSingleObject()." },
+      { ch: "Ch 3", id: 57, q: "What term describes the termination of all child processes initiated by the operating system when their parent exits?", opts: { A: "Starvation", B: "Context churn", C: "Cascading termination", D: "Priority inversion" }, ans: "C", exp: "Cascading termination describes the automatic destruction of descendant processes when the parent exits." },
+      { ch: "Ch 3", id: 58, q: "How does a shell pipe (|) establish communication between two running commands?", opts: { A: "By writing intermediary data blocks to disk", B: "Connecting the standard output (stdout) of the first process directly to the standard input (stdin) of the second", C: "By establishing an encrypted TLS connection", D: "By sharing the entire virtual address space" }, ans: "B", exp: "A pipe connects file descriptor 1 (stdout) of the first process to file descriptor 0 (stdin) of the second process." },
+      { ch: "Ch 3", id: 59, q: "What is the effect of the Linux shell redirection operator >> (e.g., cmd >> file.txt)?", opts: { A: "It reads input from file.txt", B: "It appends the standard output of cmd to the end of file.txt", C: "It overwrites file.txt from byte 0", D: "It redirects standard error to the network" }, ans: "B", exp: "The >> redirection operator appends standard output to a file without deleting existing content." },
+      { ch: "Ch 3", id: 60, q: "What is the standard IPv4 loopback address assigned to localhost?", opts: { A: "192.168.1.1", B: "10.0.0.1", C: "127.0.0.1", D: "255.255.255.0" }, ans: "C", exp: "127.0.0.1 is reserved as the standard IPv4 loopback network address pointing to the local host." },
+      { ch: "Ch 4", id: 61, q: "What are the four primary benefits of multithreaded programming cited in OS theory?", opts: { A: "Virtualization, encryption, compilation, debugging", B: "Responsiveness, resource sharing, economy, scalability", C: "Segmentation, paging, swapping, caching", D: "Scheduling, dispatching, aging, preemption" }, ans: "B", exp: "Multithreading delivers application responsiveness, efficient resource sharing, economical switching, and scalability." },
+      { ch: "Ch 4", id: 62, q: "What is the primary drawback of the Many-to-One (M:1) user-level threading model?", opts: { A: "Consuming excessive hardware CPU registers", B: "The kernel cannot allocate virtual memory", C: "If a user thread executes a blocking system call, the entire process blocks", D: "Thread context switching requires kernel traps" }, ans: "C", exp: "Because the kernel recognizes only one execution thread, a blocking call stalls all user-level threads in the process." },
+      { ch: "Ch 4", id: 63, q: "What historical threading model implemented user-space thread management without multi-core hardware parallel scheduling (e.g., early Java on Solaris)?", opts: { A: "POSIX Pthreads", B: "Green threads", C: "Windows fibers", D: "Linux tasklets" }, ans: "B", exp: "Green threads are managed completely in user space and cannot schedule threads concurrently across multiple physical cores." },
+      { ch: "Ch 4", id: 64, q: "What synchronization mechanism in CPython enforces that only one native thread executes Python bytecode at any given moment?", opts: { A: "Translation Lookaside Buffer lock", B: "Global Interpreter Lock (GIL)", C: "Memory Management Fence", D: "Compare-And-Swap spinlock" }, ans: "B", exp: "CPython's GIL serializes bytecode execution on a single core to protect reference counting memory management." },
+      { ch: "Ch 4", id: 65, q: "Which multi-process browser model does Google Chrome employ by default to isolate connected pages from the same website?", opts: { A: "Single-process model", B: "Process-per-site-instance", C: "Thread-per-tab model", D: "Bare-metal sandbox" }, ans: "B", exp: "Chrome by default groups connected pages belonging to the same site into a common renderer process while isolating distinct sites." },
+      { ch: "Ch 4", id: 66, q: "In hardware processor architectures, what does Hyperthreading (Simultaneous Multithreading) achieve?", opts: { A: "Combining separate physical motherboards into a single rack", B: "Replacing physical RAM with high-speed caches", C: "Duplicating processor architectural state (PC and registers) to appear as multiple logical CPUs on one physical core", D: "Implementing software thread pools inside the BIOS" }, ans: "C", exp: "Hyperthreading duplicates registers and program counters on a single execution core to expose multiple logical CPUs." },
+      { ch: "Ch 4", id: 67, q: "How does Hyperthreading improve system throughput during execution stalls?", opts: { A: "It downclocks the core to prevent thermal overload", B: "It allows the hardware to switch execution to another logical thread immediately when one thread experiences a cache or I/O stall", C: "It flushes all virtual memory pages to swap", D: "It converts floating-point instructions to integer operations" }, ans: "B", exp: "When one thread stalls, execution units immediately process instructions from the alternate hardware thread context." },
+      { ch: "Ch 4", id: 68, q: "What is the role of Processor Affinity in multi-processor and multi-core scheduling?", opts: { A: "Prohibiting processes from creating more than two threads", B: "Forcing threads to alternate cores on every context switch", C: "Directing the scheduler to keep a thread running on the same processor core to maximize cache reuse", D: "Disabling hardware virtualization flags" }, ans: "C", exp: "Processor affinity seeks to retain a thread on its current core to avoid cache misses and coherency invalidation." },
+      { ch: "Ch 4", id: 69, q: "What are the three most prominent standard thread API libraries in contemporary operating systems?", opts: { A: "STL, Boost, Cocoa", B: "POSIX Pthreads, Windows threads, Java threads", C: "MPI, OpenMP, CUDA", D: "glibc, Bionic, Musl" }, ans: "B", exp: "POSIX Pthreads, Windows native API threads, and Java thread libraries represent the three primary threading frameworks." },
+      { ch: "Ch 4", id: 70, q: "Which multi-processing architecture assigns specialized master duties to one CPU while subordinate slave processors execute worker tasks?", opts: { A: "Symmetric Multiprocessing (SMP)", B: "Non-Uniform Memory Access (NUMA)", C: "Asymmetric Multiprocessing (AMP)", D: "Heterogeneous Multiprocessing (HMP)" }, ans: "C", exp: "In Asymmetric Multiprocessing (AMP), a master processor coordinates scheduling and I/O while slave processors run compute tasks." },
+      { ch: "Ch 4", id: 71, q: "What CPU design pairs high-performance cores with power-efficient cores on the same silicon die (e.g., ARM big.LITTLE)?", opts: { A: "Homogeneous Symmetric Architecture", B: "Heterogeneous Multiprocessing (HMP)", C: "Dual-channel Bus Multiprocessing", D: "Static Instruction Pipelining" }, ans: "B", exp: "Heterogeneous Multiprocessing combines performance cores (P-cores) with low-power efficiency cores (E-cores)." },
+      { ch: "Ch 4", id: 72, q: "In high-level languages like C#, what construct ensures that only one thread can execute a sensitive critical code block at a time?", opts: { A: "goto", B: "lock statement (using an underlying monitor)", C: "volatile modifier", D: "yield return" }, ans: "B", exp: "The C# lock statement acquires an exclusive mutual exclusion monitor on a designated sync-block object." },
+      { ch: "Ch 4", id: 73, q: "What performance problem occurs if an internal lock object inside a class is declared as static across all instantiated objects?", opts: { A: "Mutual exclusion is completely bypassed", B: "A compiler syntax exception is thrown", C: "A single global lock causes excessive lock contention and serializes operations across all instances", D: "The CPU switches to single-user mode" }, ans: "C", exp: "A static lock is shared globally across every instance of the class, creating an unnecessary synchronization bottleneck." },
+      { ch: "Ch 4", id: 74, q: "In benchmarking parallel algorithms, what is \"wallclock time\"?", opts: { A: "The amount of physical disk storage consumed during compilation", B: "The total real-world elapsed time from start to completion", C: "The cumulative CPU cycles spent strictly in kernel mode", D: "The time taken by the BIOS self-test routine" }, ans: "B", exp: "Wallclock time measures the actual real-world duration elapsed between launching a task and its final completion." },
+      { ch: "Ch 4", id: 75, q: "In parallel algorithms like 2D image error diffusion, why must row processing maintain a synchronized lag between worker threads?", opts: { A: "Network bandwidth throttles pixel rendering", B: "A strict data dependency exists because calculating current pixels requires error terms diffused from preceding rows", C: "CPU caches cannot hold more than 100 bytes", D: "Operating systems terminate out-of-order threads" }, ans: "B", exp: "Parallel error diffusion exhibits data dependencies; rows below rely on error fractions diffused from adjacent pixels in rows above." },
+      { ch: "Ch 5", id: 76, q: "What term describes an uninterrupted cycle of CPU execution consisting of arithmetic, load, and store operations?", opts: { A: "I/O burst", B: "CPU burst", C: "Dispatch latency", D: "Context slice" }, ans: "B", exp: "Process execution alternates between computational CPU bursts and I/O bursts spent awaiting peripheral devices." },
+      { ch: "Ch 5", id: 77, q: "Under which circumstance is an operating system classified as strictly non-preemptive (cooperative)?", opts: { A: "Scheduling occurs when a timer interrupt fires", B: "Scheduling decisions occur only when a process switches from running to waiting, or when it terminates", C: "Higher-priority processes preempt running processes immediately", D: "The ready queue is ordered strictly by remaining execution time" }, ans: "B", exp: "Non-preemptive scheduling occurs only when a process voluntarily relinquishes CPU control through I/O requests or termination." },
+      { ch: "Ch 5", id: 78, q: "Which operating system component is responsible for loading saved register states, switching to user mode, and jumping to restart a program?", opts: { A: "CPU Scheduler", B: "Dispatcher", C: "Job Allocator", D: "Page Replacer" }, ans: "B", exp: "The scheduler decides which process to run next; the dispatcher executes the mechanical context switch and enters user mode." },
+      { ch: "Ch 5", id: 79, q: "Which CPU scheduling criterion measures the percentage of time that the processor is actively executing instructions?", opts: { A: "Throughput", B: "CPU utilization", C: "Response time", D: "Waiting time" }, ans: "B", exp: "CPU utilization quantifies the fraction of total elapsed time that the processor is actively performing computation." },
+      { ch: "Ch 5", id: 80, q: "Which scheduling metric represents the number of processes completed per unit of time?", opts: { A: "Turnaround time", B: "Dispatch latency", C: "Throughput", D: "Bandwidth" }, ans: "C", exp: "Throughput is defined as the rate at which processes complete execution over a measured observation window." },
+      { ch: "Ch 5", id: 81, q: "What is defined as the elapsed time from process arrival to final completion?", opts: { A: "Response time", B: "Turnaround time", C: "Waiting time", D: "Execution slice" }, ans: "B", exp: "Turnaround time accounts for the entire lifespan of a process, including queue waits, CPU execution, and I/O cycles." },
+      { ch: "Ch 5", id: 82, q: "Which scheduling metric measures the cumulative amount of time a process spends waiting in the ready queue?", opts: { A: "Turnaround time", B: "Response latency", C: "Waiting time", D: "Service period" }, ans: "C", exp: "Waiting time sums all time intervals spent residing in the ready queue waiting to be allocated processor time." },
+      { ch: "Ch 5", id: 83, q: "In First-Come, First-Served (FCFS) scheduling, what term describes short or I/O-bound processes waiting behind one long, CPU-bound process?", opts: { A: "Priority inversion", B: "Convoy effect", C: "Thrashing", D: "Starvation loop" }, ans: "B", exp: "The convoy effect occurs in FCFS when multiple fast tasks stall behind a long CPU-bound process, degrading device utilization." },
+      { ch: "Ch 5", id: 84, q: "Which CPU scheduling algorithm is mathematically provable to yield the minimum average waiting time for a static batch of ready jobs?", opts: { A: "First-Come, First-Served (FCFS)", B: "Shortest-Job-First (SJF)", C: "Priority Scheduling with aging", D: "Round-Robin (RR)" }, ans: "B", exp: "SJF optimizes average waiting time by prioritizing processes with the shortest upcoming CPU bursts." },
+      { ch: "Ch 5", id: 85, q: "In practical SJF implementations, how is the duration of the next CPU burst (tau_{n+1}) estimated?", opts: { A: "By reading the executable file size on disk", B: "By querying hardware BIOS timers", C: "Using exponential smoothing: tau_{n+1} = alpha * t_n + (1 - alpha) * tau_n", D: "Generating uniform pseudo-random distributions" }, ans: "C", exp: "Exponential smoothing balances recent burst observations against past predicted estimates using smoothing factor alpha." },
+      { ch: "Ch 5", id: 86, q: "What is the preemptive variation of the Shortest-Job-First scheduling algorithm called?", opts: { A: "First-In, First-Out (FIFO)", B: "Shortest-Remaining-Time-First (SRTF)", C: "Earliest Deadline First (EDF)", D: "Multilevel Round-Robin" }, ans: "B", exp: "SRTF preempts the running process if a newly arrived process presents a shorter remaining burst duration." },
+      { ch: "Ch 5", id: 87, q: "What technique is implemented to prevent the starvation (indefinite blocking) of low-priority processes in Priority Scheduling?", opts: { A: "Paging out high-priority processes", B: "Aging (gradually incrementing the priority of processes waiting in the queue)", C: "Shrinking the time quantum to zero", D: "Forcing non-preemptive locks" }, ans: "B", exp: "Aging increments the priority of waiting jobs over time, ensuring low-priority processes eventually gain the highest priority tier." },
+      { ch: "Ch 5", id: 88, q: "In Round-Robin scheduling, what is the consequence of choosing an excessively small time quantum (e.g., 1 microsecond)?", opts: { A: "The scheduler behaves identically to FCFS", B: "Low-priority jobs starve permanently", C: "A substantial percentage of CPU time is wasted on context-switch overhead", D: "Hardware timer interrupts cease to function" }, ans: "C", exp: "If the time quantum approaches context switch latency, the processor spends most of its execution capacity thrashing contexts." },
+      { ch: "Ch 5", id: 89, q: "Which scheduling algorithm organizes the ready queue into multiple priority tiers and allows processes to migrate dynamically between tiers?", opts: { A: "Static Priority Scheduling", B: "Simple Multilevel Queue", C: "Multilevel Feedback Queue (MLFQ)", D: "First-Come, First-Served" }, ans: "C", exp: "MLFQ monitors burst behaviors, demoting compute-intensive jobs to lower queues and promoting interactive jobs to higher queues." },
+      { ch: "Ch 5", id: 90, q: "What distinguishes \"Soft Affinity\" from \"Hard Affinity\" in multiprocessor scheduling?", opts: { A: "Soft affinity guarantees core placement; hard affinity merely expresses a preference", B: "Soft affinity attempts to keep a process on the same core without strict guarantees, while hard affinity enforces explicit core bindings", C: "Hard affinity is implemented in software; soft affinity requires specialized hardware", D: "Soft affinity applies only to single-core microcontrollers" }, ans: "B", exp: "Soft affinity guides scheduling heuristics, whereas hard affinity utilizes explicit affinity masks to bind processes to specified cores." },
+      { ch: "Ch 6", id: 91, q: "What term describes a concurrency bug where multiple threads access and manipulate shared data, and the final outcome depends on execution order?", opts: { A: "Deadlock", B: "Race condition", C: "Starvation", D: "Livelock" }, ans: "B", exp: "A race condition occurs when unsynchronized threads concurrently update shared state, producing non-deterministic outcomes." },
+      { ch: "Ch 6", id: 92, q: "What three fundamental criteria must any valid solution to the Critical-Section Problem satisfy?", opts: { A: "Encryption, authentication, authorization", B: "Mutual exclusion, progress, bounded waiting", C: "Atomicity, consistency, durability", D: "Throughput, latency, turnaround" }, ans: "B", exp: "Dijkstra established Mutual Exclusion, Progress, and Bounded Waiting as the three formal requirements for critical-section solutions." },
+      { ch: "Ch 6", id: 93, q: "What is guaranteed by the \"Mutual Exclusion\" requirement of the Critical-Section Problem?", opts: { A: "All processes advance through the critical section concurrently", B: "Only one process at a time can execute inside its critical section", C: "High-priority tasks bypass critical section locks", D: "Context switching cannot occur during system calls" }, ans: "B", exp: "Mutual exclusion ensures that no two processes or threads execute within their critical sections simultaneously." },
+      { ch: "Ch 6", id: 94, q: "How many concurrent processes does Peterson's classic software solution support?", opts: { A: "Unlimited processes", B: "Exactly 16 processes", C: "Exactly 2 processes", D: "Up to the number of physical cores" }, ans: "C", exp: "Peterson's algorithm is formulated specifically to coordinate mutual exclusion between two cooperating processes (P0 and P1)." },
+      { ch: "Ch 6", id: 95, q: "Why does Peterson's software solution fail to guarantee mutual exclusion on modern multi-core processor architectures?", opts: { A: "Modern processors lack floating-point units", B: "Out-of-order compilers and weakly ordered memory architectures reorder independent read/write instructions", C: "Hardware registers can no longer hold boolean variables", D: "Kernel protection rings disable user-space arrays" }, ans: "B", exp: "Modern processors reorder memory operations to maximize pipelines, violating Peterson's assumed sequential ordering." },
+      { ch: "Ch 6", id: 96, q: "What is the function of a hardware Memory Barrier (Memory Fence) instruction?", opts: { A: "Allocating contiguous physical RAM blocks", B: "Disabling CPU fan throttles", C: "Enforcing the ordering of memory load and store operations across execution boundaries", D: "Clearing kernel page table entries" }, ans: "C", exp: "A memory barrier forces the CPU to complete preceding reads and writes before allowing subsequent memory operations to execute." },
+      { ch: "Ch 6", id: 97, q: "What is the defining characteristic of an \"atomic\" hardware instruction?", opts: { A: "It executes across multiple networked nodes", B: "It executes as an indivisible, uninterrupted unit of computation", C: "It operates exclusively on 64-bit floating-point registers", D: "It runs only when the operating system boots" }, ans: "B", exp: "An atomic operation executes completely without interruption; intermediate states cannot be observed." },
+      { ch: "Ch 6", id: 98, q: "What type of mutual exclusion lock employs a busy-waiting loop repeatedly evaluating a flag without relinquishing the CPU?", opts: { A: "Semaphore", B: "Spinlock", C: "Condition variable", D: "Message queue" }, ans: "B", exp: "A spinlock executes a tight polling loop until the lock is freed, consuming CPU cycles while waiting." },
+      { ch: "Ch 6", id: 99, q: "Under what scenario is a spinlock preferred over a blocking mutex?", opts: { A: "On single-core processors with extended I/O operations", B: "On multi-core systems when the lock is held for very short durations (less than two context switches)", C: "When reading massive multi-gigabyte files from magnetic tape", D: "In interactive command shells waiting for user keyboard typing" }, ans: "B", exp: "Spinning preserves throughput when lock wait times are shorter than the overhead of two context switches." },
+      { ch: "Ch 6", id: 100, q: "How does a non-busy-waiting (no-spinlock) semaphore implementation handle a thread that cannot acquire a resource?", opts: { A: "It raises an unhandled hardware exception", B: "It blocks the thread, places it onto the semaphore waiting queue, and yields the CPU via a context switch", C: "It executes an infinite while(true) loop", D: "It terminates the calling process immediately" }, ans: "B", exp: "Non-spinning semaphores suspend the thread, saving CPU capacity until awakened by a signal()." },
+      { ch: "Ch 7", id: 101, q: "In the classical Bounded-Buffer synchronization problem with buffer capacity n, how are the semaphores initialized?", opts: { A: "mutex = 0, empty = 0, full = n", B: "mutex = n, empty = 1, full = 0", C: "mutex = 1, empty = n, full = 0", D: "mutex = 1, empty = 0, full = n" }, ans: "C", exp: "mutex is initialized to 1 for mutual exclusion, empty to buffer capacity n, and full to 0 representing available filled items." },
+      { ch: "Ch 7", id: 102, q: "In the Bounded-Buffer problem, what sequence of semaphore calls must a producer execute before adding an item?", opts: { A: "signal(mutex); signal(full);", B: "wait(empty); wait(mutex);", C: "wait(full); wait(mutex);", D: "signal(empty); wait(mutex);" }, ans: "B", exp: "The producer must first verify that an empty slot exists (wait(empty)) and then acquire exclusive access to the buffer (wait(mutex))." },
+      { ch: "Ch 7", id: 103, q: "After adding an item into the bounded buffer, what sequence of semaphore signals must the producer execute?", opts: { A: "wait(mutex); wait(empty);", B: "signal(mutex); signal(full);", C: "signal(empty); signal(mutex);", D: "wait(full); signal(mutex);" }, ans: "B", exp: "The producer releases the buffer lock (signal(mutex)) and increments the count of available produced items (signal(full))." },
+      { ch: "Ch 7", id: 104, q: "In the Readers-Writers problem, what condition permits concurrent reader execution?", opts: { A: "Readers must hold exclusive locks", B: "Multiple readers can access the shared database simultaneously without conflict", C: "A writer is actively modifying table records", D: "The CPU has only one physical core" }, ans: "B", exp: "Reading is a non-destructive operation; multiple reader threads can safely access shared data concurrently without hazard." },
+      { ch: "Ch 7", id: 105, q: "In the First Readers-Writers problem, what hazard can writer processes experience?", opts: { A: "Buffer overflow", B: "Starvation caused by a continuous stream of overlapping readers", C: "Arithmetic divide-by-zero", D: "Memory barrier violations" }, ans: "B", exp: "Because new readers can enter while existing readers are active, writers may wait indefinitely if readers arrive continuously." },
+      { ch: "Ch 7", id: 106, q: "How does the Second Readers-Writers problem resolve writer starvation?", opts: { A: "By prohibiting reading operations entirely", B: "Once a writer is ready, no new incoming readers are allowed to begin reading", C: "By forcing writers to execute in user mode", D: "By executing readers strictly on even-numbered CPU cores" }, ans: "B", exp: "Prioritizing writers ensures that once a writer signals intent to write, newly arrived readers must queue behind the writer." },
+      { ch: "Ch 7", id: 107, q: "In the classic implementation of the Readers-Writers problem, which reader thread is responsible for signaling rw_mutex to release writers?", opts: { A: "The first reader entering the critical section", B: "The last reader exiting the critical section (when read_count == 0)", C: "Any reader selected at random", D: "Readers never signal rw_mutex" }, ans: "B", exp: "When read_count decrements to 0, the final exiting reader signals rw_mutex to release any blocked writer." },
+      { ch: "Ch 7", id: 108, q: "In the Dining-Philosophers problem, what occurs if all five philosophers sit down simultaneously and grab their left chopstick?", opts: { A: "All five eat simultaneously", B: "Deadlock occurs due to circular wait", C: "Memory segmentation fault", D: "Starvation of the rice bowl" }, ans: "B", exp: "Each philosopher holds their left chopstick while waiting indefinitely for the right, creating a circular wait deadlock." },
+      { ch: "Ch 7", id: 109, q: "Which of the following strategies successfully prevents deadlock in the Dining-Philosophers scenario?", opts: { A: "Adding five more philosophers to the table", B: "Removing the rice bowl completely", C: "Allowing at most four philosophers to sit at the five-chair table simultaneously", D: "Forcing all philosophers to hold chopsticks permanently" }, ans: "C", exp: "By the Pigeonhole Principle, limiting the table to four philosophers guarantees that at least one philosopher can claim two chopsticks." },
+      { ch: "Ch 7", id: 110, q: "What is an asymmetric solution to the Dining-Philosophers problem?", opts: { A: "Forcing philosophers to share a single global chopstick", B: "Odd-numbered philosophers pick left then right; even-numbered pick right then left", C: "Requiring philosophers to eat with forks", D: "Eliminating the thinking state" }, ans: "B", exp: "Alternating acquisition orders breaks the circular wait condition, guaranteeing at least one philosopher can eat." },
+      { ch: "Ch 8", id: 111, q: "What are Coffman's four necessary conditions for deadlock to occur?", opts: { A: "Aging, preemption, caching, queuing", B: "Mutual exclusion, hold and wait, no preemption, circular wait", C: "Atomicity, consistency, isolation, durability", D: "Paging, swapping, segmentation, fragmentation" }, ans: "B", exp: "A deadlock can arise if and only if Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait hold simultaneously." },
+      { ch: "Ch 8", id: 112, q: "In deadlock characterization, what does the \"Mutual Exclusion\" condition signify?", opts: { A: "Resources are completely shareable by all processes", B: "At least one resource is held in a non-shareable mode", C: "Processes yield CPU control voluntarily", D: "Context switches occur via timer interrupts" }, ans: "B", exp: "Mutual exclusion dictates that a resource can be held by only one process at a time; subsequent requesters must wait." },
+      { ch: "Ch 8", id: 113, q: "In a Resource-Allocation Graph (RAG) where every resource type possesses exactly ONE instance, what does the presence of a cycle indicate?", opts: { A: "The system is operating optimally", B: "A deadlock definitely exists (necessary and sufficient condition)", C: "The system is in an unsafe state but cannot deadlock", D: "The dispatcher is stalled in kernel mode" }, ans: "B", exp: "When each resource contains only a single instance, a cycle in the RAG is both necessary and sufficient for deadlock." },
+      { ch: "Ch 8", id: 114, q: "If resource types in a Resource-Allocation Graph contain MULTIPLE instances, what does the presence of a cycle indicate?", opts: { A: "A deadlock is mathematically guaranteed", B: "Deadlocks are impossible", C: "A deadlock may or may not exist (necessary, but not sufficient)", D: "The long-term scheduler must abort all jobs" }, ans: "C", exp: "With multiple instances, external processes outside the cycle may release resources, breaking dependencies and avoiding deadlock." },
+      { ch: "Ch 8", id: 115, q: "How does Deadlock Prevention eliminate the Circular Wait condition?", opts: { A: "By preempting CPU cores every 10 ms", B: "By defining a global linear ordering of all resource types and requiring processes to request resources in strictly increasing order", C: "By requiring processes to request all memory at boot time", D: "By executing all threads in supervisor mode" }, ans: "B", exp: "Monotonically ordering resource acquisitions mathematically prevents cyclical dependency chains from forming." },
+      { ch: "Ch 8", id: 116, q: "What advance information does a Deadlock Avoidance algorithm (like the Banker's Algorithm) require?", opts: { A: "The exact machine cycle count of each function", B: "The maximum number of resources of each type that each process will ever claim", C: "The network bandwidth consumed by sockets", D: "The temperature threshold of CPU cores" }, ans: "B", exp: "Deadlock avoidance requires processes to declare their maximum resource claims upfront to evaluate safety sequences." },
+      { ch: "Ch 8", id: 117, q: "In Deadlock Avoidance theory, what defines an operating system state as \"Safe\"?", opts: { A: "All processes have terminated execution", B: "There exists at least one safe sequence of processes that can satisfy all remaining maximum demands without deadlocking", C: "No memory pages are currently swapped to disk", D: "CPU utilization is at 100%" }, ans: "B", exp: "A state is safe if a sequence exists where every process can obtain its declared maximum allocation and complete execution." },
+      { ch: "Ch 8", id: 118, q: "What classic algorithm evaluates system safety for multi-instance resource systems before granting resource allocations?", opts: { A: "Peterson's Algorithm", B: "Banker's Algorithm", C: "Round-Robin Scheduling", D: "Exponential Smoothing Algorithm" }, ans: "B", exp: "Dijkstra's Banker's Algorithm calculates safe execution sequences before approving resource requests." },
+      { ch: "Ch 8", id: 119, q: "In single-instance deadlock detection, what collapsed graph representation is derived from the Resource-Allocation Graph?", opts: { A: "Gantt Chart", B: "Activation Record Stack", C: "Wait-for graph", D: "Bounded Buffer Queue" }, ans: "C", exp: "A wait-for graph collapses resource nodes, leaving directed edges directly between waiting processes (Pi -> Pj)." },
+      { ch: "Ch 8", id: 120, q: "Why can database management systems recover from deadlocks more systematically than general-purpose operating system kernels?", opts: { A: "Databases run exclusively on single-core computers", B: "Databases do not utilize locks", C: "Databases implement transaction logs allowing them to abort and rollback selected victim transactions", D: "Databases use cooperative multi-tasking" }, ans: "C", exp: "Database transactional architectures maintain write-ahead logs, enabling the engine to abort and rollback a victim transaction cleanly." },
+      { ch: "Ch 9", id: 121, q: "Which Linux command displays complete distribution information including Distributor ID, Description, Release, and Codename?", opts: { A: "uname -a", B: "lsb_release -a", C: "cat /proc/version", D: "hostnamectl" }, ans: "B", exp: "lsb_release -a queries Linux Standard Base modules to print distribution release and codename details." },
+      { ch: "Ch 9", id: 122, q: "Which command prints the active Linux kernel release version string (e.g., 6.6.114.1-microsoft-standard-WSL2)?", opts: { A: "cat /etc/issue", B: "lsb_release -r", C: "uname -r", D: "whoami -v" }, ans: "C", exp: "The uname command with the -r option outputs the operating system kernel release version." },
+      { ch: "Ch 9", id: 123, q: "Which command inspects the boot kernel binary image file and its file size on a standard Linux system?", opts: { A: "cat /boot/kernel", B: "ls -lh /boot/vmlinuz-$(uname -r)", C: "du -s /etc/kernel", D: "file /proc/vmlinuz" }, ans: "B", exp: "Bootable compressed Linux kernels reside under /boot/ with prefix vmlinuz- followed by the kernel release version." },
+      { ch: "Ch 9", id: 124, q: "Which command displays detailed CPU hardware architecture details (model name, core count, cache size) in Ubuntu?", opts: { A: "cat /proc/meminfo", B: "cat /proc/cpuinfo", C: "sysinfo -c", D: "view /sys/cpu" }, ans: "B", exp: "/proc/cpuinfo is the procfs virtual file exposing per-core CPU microarchitecture specifications." },
+      { ch: "Ch 9", id: 125, q: "How do you launch a background process with the lowest execution priority (least favorable nice value of 19)?", opts: { A: "sleep 100 -priority 19", B: "nice -n 19 sleep 100 &", C: "renice -19 sleep 100", D: "kill -19 sleep 100" }, ans: "B", exp: "nice -n 19 launches a command with nice value 19 (lowest priority), and & runs it in the background." },
+      { ch: "Ch 9", id: 126, q: "What keyboard shortcut pauses an active foreground process by sending SIGTSTP, and what command resumes it in the background?", opts: { A: "Ctrl + C, followed by fg", B: "Ctrl + D, followed by resume", C: "Ctrl + Z, followed by bg", D: "Ctrl + \\, followed by start" }, ans: "C", exp: "Ctrl + Z sends SIGTSTP to suspend execution, and the shell command bg sends SIGCONT to continue running in the background." },
+      { ch: "Ch 9", id: 127, q: "When three background processes are running, which command brings the second job (%2) to the foreground?", opts: { A: "bring %2", B: "fg %2", C: "resume 2", D: "switch %2" }, ans: "B", exp: "The fg command followed by job specifier %2 brings background job number 2 into the foreground." },
+      { ch: "Ch 9", id: 128, q: "Which command chain filters and prints only the lines containing the text \"home\" from /etc/passwd?", opts: { A: "cat /etc/passwd > grep home", B: "cat /etc/passwd | grep home", C: "grep /etc/passwd < home", D: "find home /etc/passwd" }, ans: "B", exp: "The pipe operator | forwards the stdout stream of cat /etc/passwd into the stdin of grep home." },
+      { ch: "Ch 9", id: 129, q: "Which Linux utility displays how long the system has been running since its last boot along with system load averages?", opts: { A: "clock", B: "uptime", C: "time", D: "runtime" }, ans: "B", exp: "uptime prints the current time, elapsed running time since boot, logged-in user count, and load averages." },
+      { ch: "Ch 9", id: 130, q: "Which command displays detailed kernel and hardware memory allocation parameters via procfs?", opts: { A: "cat /proc/cpuinfo", B: "cat /proc/meminfo", C: "ls -lh /mem", D: "ps -aux" }, ans: "B", exp: "/proc/meminfo displays real-time memory usage details including active, inactive, and buffer caches." },
+      { ch: "Ch 9", id: 131, q: "Which command displays total, used, and free memory formatted in human-readable units (MB/GB)?", opts: { A: "memstat -h", B: "free -h", C: "top -m", D: "ram -d" }, ans: "B", exp: "free -h displays total, utilized, and available RAM and swap space formatted in megabytes and gigabytes." },
+      { ch: "Ch 9", id: 132, q: "Which command sets permissions on myfile.txt so that ONLY the owner can read it, with zero access for group and others?", opts: { A: "chmod 777 myfile.txt", B: "chmod 400 myfile.txt", C: "chmod 644 myfile.txt", D: "chmod 111 myfile.txt" }, ans: "B", exp: "In octal notation, 4 grants read-only permission to the owner, while 0 and 0 deny all permissions to group and others." },
+      { ch: "Ch 9", id: 133, q: "Which command changes both the owner and the group association of myfile.txt to \"root\"?", opts: { A: "chgrp root myfile.txt", B: "sudo chown root:root myfile.txt", C: "chmod root:root myfile.txt", D: "setowner root:root myfile.txt" }, ans: "B", exp: "chown user:group target updates both owner user and group ownership simultaneously." },
+      { ch: "Ch 9", id: 134, q: "How do you create a symbolic (soft) link named mylink pointing to a folder named myfolder?", opts: { A: "link -s myfolder mylink", B: "ln -s myfolder mylink", C: "shortcut myfolder mylink", D: "cp -sym myfolder mylink" }, ans: "B", exp: "ln -s target link_name creates a symbolic link pointing to the specified target." },
+      { ch: "Ch 9", id: 135, q: "Which command displays mounted disk filesystem usage and available capacity in human-readable format?", opts: { A: "du -h", B: "df -h", C: "diskstat -h", D: "fdisk -l" }, ans: "B", exp: "df -h (disk free) displays total capacity, used blocks, and available storage across active filesystems." },
+      { ch: "Ch 9", id: 136, q: "Which command measures the actual allocated disk space occupied by the file /usr/share/dict/american-english?", opts: { A: "ls -s /usr/share/dict/american-english", B: "du -h /usr/share/dict/american-english", C: "df -h /usr/share/dict/american-english", D: "wc -c /usr/share/dict/american-english" }, ans: "B", exp: "du -h (disk usage) measures the actual disk blocks allocated to a specific file or directory." },
+      { ch: "Ch 9", id: 137, q: "Which administrative utility checks and repairs Linux ext4 file systems?", opts: { A: "fdisk", B: "sudo fsck /dev/sda1", C: "mkfs", D: "chroot" }, ans: "B", exp: "fsck (file system consistency check) scans, verifies, and repairs file system metadata." },
+      { ch: "Ch 9", id: 138, q: "Which command searches the entire root directory structure recursively for a file named filename.txt?", opts: { A: "grep -r filename.txt /", B: "find / -name \"filename.txt\"", C: "locate -now filename.txt", D: "which filename.txt" }, ans: "B", exp: "find path -name expression navigates the directory hierarchy recursively matching target file names." },
+      { ch: "Ch 9", id: 139, q: "Which command allows an active user to change their account login password?", opts: { A: "chuser", B: "passwd", C: "setpass", D: "pwd" }, ans: "B", exp: "The passwd utility allows users to update their login authentication password in /etc/shadow." },
+      { ch: "Ch 9", id: 140, q: "Which command displays currently logged-in users along with their active processes and idle times?", opts: { A: "whoami", B: "w", C: "id", D: "users" }, ans: "B", exp: "The w command provides an overview of logged-in accounts, terminals, idle intervals, and current foreground commands." },
+      { ch: "Ch 9", id: 141, q: "Which command chain creates a new user named newuser and subsequently deletes that user?", opts: { A: "useradd newuser && userdel -r newuser", B: "sudo adduser newuser && sudo deluser newuser", C: "makeuser newuser && removeuser newuser", D: "newuser --add && newuser --del" }, ans: "B", exp: "Debian and Ubuntu systems provide the user-friendly wrappers adduser and deluser for account management." },
+      { ch: "Ch 9", id: 142, q: "Which command establishes an encrypted remote shell login session to host hostname as user username?", opts: { A: "telnet username@hostname", B: "ssh username@hostname", C: "ftp username@hostname", D: "rlogin username@hostname" }, ans: "B", exp: "ssh user@host initiates an encrypted remote shell connection over port 22." },
+      { ch: "Ch 9", id: 143, q: "Which command initiates a passive-mode FTP connection to server hostname?", opts: { A: "sftp hostname", B: "ftp -p hostname", C: "scp -P hostname", D: "wget --ftp hostname" }, ans: "B", exp: "The -p flag instructs the ftp client to use passive transfer mode." },
+      { ch: "Ch 9", id: 144, q: "Which modern command displays all network interface IP addresses on an Ubuntu system?", opts: { A: "netstat -rn", B: "ip addr show", C: "route -d", D: "view /etc/hosts" }, ans: "B", exp: "ip addr show (or ip a) is the standard iproute2 command for inspecting network interface addressing." },
+      { ch: "Ch 9", id: 145, q: "Which command queries DNS nameservers to resolve the IP address of google.com?", opts: { A: "ping google.com", B: "nslookup google.com", C: "traceroute google.com", D: "netstat google.com" }, ans: "B", exp: "nslookup queries DNS servers to translate domain names into IP addresses." },
+      { ch: "Ch 9", id: 146, q: "Which command reveals the Layer 2 hardware MAC addresses of network adapters in Linux?", opts: { A: "ifconfig -mac", B: "ip link show", C: "cat /etc/resolv.conf", D: "netstat -i" }, ans: "B", exp: "ip link show displays link-layer device attributes including MAC hardware addresses." },
+      { ch: "Ch 9", id: 147, q: "Which command schedules a download of https://cache111.com/test.zip at 1:00 AM tomorrow using the at daemon?", opts: { A: "cron 01:00 \"wget https://cache111.com/test.zip\"", B: "echo \"wget https://cache111.com/test.zip\" | at 01:00 tomorrow", C: "schedule --time 1am wget https://cache111.com/test.zip", D: "sleep until 1am && wget https://cache111.com/test.zip" }, ans: "B", exp: "The at daemon reads commands from standard input and queues them for execution at the designated time." },
+      { ch: "Ch 9", id: 148, q: "Which command displays only the first 10 lines of /etc/passwd?", opts: { A: "tail -n 10 /etc/passwd", B: "head -n 10 /etc/passwd", C: "top -n 10 /etc/passwd", D: "less -10 /etc/passwd" }, ans: "B", exp: "head -n 10 streams the first 10 lines of the specified file to standard output." },
+      { ch: "Ch 9", id: 149, q: "Which command filters and prints lines ending with the text \"land\" from /usr/share/dict/american-english?", opts: { A: "grep \"^land\" /usr/share/dict/american-english", B: "grep \"land$\" /usr/share/dict/american-english", C: "find \"land\" /usr/share/dict/american-english", D: "wc -l \"land\" /usr/share/dict/american-english" }, ans: "B", exp: "The regular expression anchor $ matches patterns occurring strictly at the end of a line." },
+      { ch: "Ch 9", id: 150, q: "Which command archives and compresses directory myfolder into a gzipped tarball named foldername.tar.gz?", opts: { A: "zip -tar foldername.tar.gz myfolder", B: "tar -czvf foldername.tar.gz myfolder", C: "gzip -c myfolder > foldername.tar.gz", D: "compress -r foldername.tar.gz myfolder" }, ans: "B", exp: "tar -czvf creates (-c), gzips (-z), displays progress (-v), and writes to archive file (-f)." }
+    ];
+
+    let answers = {};
+
+    function render() {
+      const filter = document.getElementById("chFilter").value;
+      const list = filter === "all" ? quizData : quizData.filter(x => x.ch === filter);
+      const container = document.getElementById("quizBox");
+      container.innerHTML = "";
+
+      document.getElementById("countTotal").innerText = list.length;
+
+      list.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.id = `q-${item.id}`;
+
+        const head = document.createElement("div");
+        head.innerHTML = `<span class="tag">${item.ch}</span> <small style="color:var(--muted)">Question ${item.id}</small>`;
+        card.appendChild(head);
+
+        const qTitle = document.createElement("div");
+        qTitle.className = "q-text";
+        qTitle.innerText = item.q;
+        card.appendChild(qTitle);
+
+        Object.keys(item.opts).forEach(k => {
+          const btn = document.createElement("button");
+          btn.className = "btn-opt";
+          btn.innerHTML = `<strong>${k})</strong> ${item.opts[k]}`;
+          btn.dataset.key = k;
+
+          if (answers[item.id]) {
+            btn.disabled = true;
+            if (k === item.ans) btn.classList.add("correct");
+            else if (k === answers[item.id]) btn.classList.add("wrong");
+          }
+
+          btn.onclick = () => choose(item.id, k);
+          card.appendChild(btn);
+        });
+
+        const exp = document.createElement("div");
+        exp.className = "exp";
+        exp.id = `exp-${item.id}`;
+        exp.innerHTML = `<strong>เฉลย: ข้อ ${item.ans}</strong><br>${item.exp}`;
+        if (answers[item.id]) exp.style.display = "block";
+        card.appendChild(exp);
+
+        container.appendChild(card);
+      });
+
+      updateStats();
+    }
+
+    function choose(id, key) {
+      if (answers[id]) return;
+      answers[id] = key;
+      const q = quizData.find(x => x.id === id);
+      const card = document.getElementById(`q-${id}`);
+      card.querySelectorAll(".btn-opt").forEach(btn => {
+        btn.disabled = true;
+        if (btn.dataset.key === q.ans) btn.classList.add("correct");
+        else if (btn.dataset.key === key) btn.classList.add("wrong");
+      });
+      document.getElementById(`exp-${id}`).style.display = "block";
+      updateStats();
+    }
+
+    function updateStats() {
+      const filter = document.getElementById("chFilter").value;
+      const list = filter === "all" ? quizData : quizData.filter(x => x.ch === filter);
+      let ans = 0, cor = 0, wrg = 0;
+      list.forEach(x => {
+        if (answers[x.id]) {
+          ans++;
+          if (answers[x.id] === x.ans) cor++;
+          else wrg++;
+        }
+      });
+      document.getElementById("countAns").innerText = ans;
+      document.getElementById("countCorrect").innerText = cor;
+      document.getElementById("countWrong").innerText = wrg;
+    }
+
+    document.getElementById("chFilter").onchange = render;
+
+    document.getElementById("resetBtn").onclick = () => {
+      answers = {};
+      render();
+    };
+
+    document.getElementById("revealBtn").onclick = () => {
+      const filter = document.getElementById("chFilter").value;
+      const list = filter === "all" ? quizData : quizData.filter(x => x.ch === filter);
+      list.forEach(x => answers[x.id] = x.ans);
+      render();
+    };
+
+    // Start render on load
+    window.onload = render;
+  </script>
+
+</body>
+
+</html>
